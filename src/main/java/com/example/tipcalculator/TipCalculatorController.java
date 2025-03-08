@@ -3,6 +3,8 @@ package com.example.tipcalculator;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -12,6 +14,12 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 
 public class TipCalculatorController {
+
+    @FXML
+    private void calculateButtonPressed(ActionEvent event) {
+        calculatingTip();
+    }
+
     // formatters for currency and percentages
     private static final NumberFormat currency =
             NumberFormat.getCurrencyInstance();
@@ -37,39 +45,41 @@ public class TipCalculatorController {
     private TextField totalTextField;
 
     // calculates and displays the tip and total amounts
-    @FXML
-    private void calculateButtonPressed(ActionEvent event) {
-        try {
-            BigDecimal amount = new BigDecimal(amountTextField.getText());
-            BigDecimal tip = amount.multiply(tipPercentage);
-            BigDecimal total = amount.add(tip);
 
-            tipTextField.setText(currency.format(tip));
-            totalTextField.setText(currency.format(total));
-        }
-        catch (NumberFormatException ex) {
-            amountTextField.setText("Enter amount");
-            amountTextField.selectAll();
-            amountTextField.requestFocus();
-        }
-    }
 
     // called by FXMLLoader to initialize the controller
     public void initialize() {
         // 0-4 rounds down, 5-9 rounds up
         currency.setRoundingMode(RoundingMode.HALF_UP);
 
-        // listener for changes to tipPercentageSlider's value
-        tipPercentageSlider.valueProperty().addListener(
-                new ChangeListener<Number>() {
-                    @Override
-                    public void changed(ObservableValue<? extends Number> ov,
-                                        Number oldValue, Number newValue) {
-                        tipPercentage =
-                                BigDecimal.valueOf(newValue.intValue() / 100.0);
-                        tipPercentageLabel.setText(percent.format(tipPercentage));
-                    }
-                }
+        tipPercentageLabel.textProperty().bind(
+                Bindings.createStringBinding(() ->
+                        percent.format(tipPercentageSlider.getValue()/100.00),
+                        tipPercentageSlider.valueProperty()
+        )
         );
+
+        tipPercentageSlider.valueProperty().addListener((a,b,c) -> {
+            tipPercentage = BigDecimal.valueOf(c.doubleValue()/100.0);
+            calculatingTip();
+        }
+    );
+        amountTextField.textProperty().addListener((a,b,c) -> calculatingTip());
+
+
+    }
+
+    private void calculatingTip() {
+        try {
+            BigDecimal amount = new BigDecimal(amountTextField.getText());
+            BigDecimal tip = amount.multiply(tipPercentage);
+            BigDecimal totalAmount= amount.add(tip);
+
+            tipTextField.setText(currency.format(tip));
+            totalTextField.setText(currency.format(totalAmount));
+        } catch (NumberFormatException e) {
+            tipTextField.setText("");  // Clear fields if input is invalid
+            totalTextField.setText("");
+        }
     }
 }
