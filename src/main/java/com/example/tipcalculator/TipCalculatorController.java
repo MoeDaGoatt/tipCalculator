@@ -77,9 +77,8 @@ public class TipCalculatorController {
 
             tipTextField.setText(currency.format(tip));
             totalTextField.setText(currency.format(totalAmount));
-        } catch (NumberFormatException e) {
-            tipTextField.setText("");  // Clear fields if input is invalid
-            totalTextField.setText("");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
